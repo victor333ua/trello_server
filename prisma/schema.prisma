@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      =  env("DATABASE_URL")
+}
+
+model User {
+    id Int      @id @default(autoincrement()) 
+    name String?
+    email String @unique
+    password String?
+    groupId Int
+    group Group @relation(fields: [groupId], references:[id])   
+    credentials FederatedCredential[]
+}
+
+model Group {
+    id Int      @id @default(autoincrement())
+    name String @unique
+    users User[]
+    columns Column[]
+}
+
+model Column {
+    id Int      @id @default(autoincrement()) 
+    name String 
+    index Int
+    groupId
+    group Group @relation(fields: [groupId], references:[id])   
+    tasks Task[]
+}
+
+model Task {
+    id Int      @id @default(autoincrement()) 
+    name String
+    index Int
+    columnId Int 
+    column Column @relation(fields: [columnId], references:[id])   
+    list Item[]
+}
+
+model Item {
+    id Int      @id @default(autoincrement())
+    text String
+    taskId 
+    task Task @relation(fields: [taskId], references:[id])
+}
+
+model FederatedCredential {
+  userId Int
+  user User @relation(fields: userId, references: id, onDelete: Cascade)
+  provider String
+  socialId String
+
+  @@id([provider, socialId])
+}

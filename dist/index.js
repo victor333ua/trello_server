@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.prisma = void 0;
 const express_1 = __importDefault(require("express"));
-const generated_1 = require("./generated");
+const client_1 = require("@prisma/client");
 const cors_1 = __importDefault(require("cors"));
 const routes_1 = __importDefault(require("./routes"));
-exports.prisma = new generated_1.PrismaClient();
+exports.prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
 const corsOptions = {
     origin: [

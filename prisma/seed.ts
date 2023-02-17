@@ -1,4 +1,4 @@
-import { PrismaClient } from '../src/generated';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,19 @@ async function main() {
                     create: [
                         {
                             name: 'ToDo',
-                            index: 0
+                            index: 0,
+                            tasks: {
+                              create: {
+                                name: 'task1',
+                                index: 0,
+                                list: {
+                                  create: [
+                                    { text: 'item1'},
+                                    { text: 'item2'}
+                                  ]
+                                }
+                              }
+                            }
                         },
                         {
                             name: 'In Progress',

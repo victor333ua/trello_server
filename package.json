@@ -21,11 +21,14 @@
   "scripts": {
     "watch": "tsc --watch",
     "build": "tsc",
-    "dev": "nodemon --ignore 'src/generated' dist/index.js",
+    "dev": "nodemon dist/index.js",
     "start": "ts-node src/index.ts",
     "db:generate": "yarn pnpify prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
+  },
+  "resolutions": {
+    ".prisma": "link:node-modules/.prisma"
   }
 }

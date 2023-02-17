@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from './generated';
+import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import route from './routes';
 

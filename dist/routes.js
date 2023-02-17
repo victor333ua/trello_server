@@ -14,23 +14,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const index_1 = require("./index");
+const objToArray_1 = require("./utils/objToArray");
 const router = express_1.default.Router();
 router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { groupId } = req.params;
     try {
-        const columns = yield index_1.prisma.column.findMany({
-            where: { groupId: Number(groupId) },
+        let columns = yield index_1.prisma.column.findMany({
+            where: { groupId },
             orderBy: { index: 'asc' },
             include: {
                 tasks: {
-                    orderBy: { index: 'asc' },
                     include: {
-                        list: true
-                    }
+                        list: {
+                            select: { text: true }
+                        }
+                    },
+                    orderBy: { index: 'asc' }
                 }
             }
         });
+        columns = (0, objToArray_1.objToArray)(columns);
         res.json({ columns });
+    }
+    catch (error) {
+        console.log('err=', error);
+        res.status(500).send(error);
+    }
+}));
+router.get('/tasks', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const tasks = yield index_1.prisma.task.findMany();
+        res.json(tasks);
     }
     catch (error) {
         console.log('err=', error);

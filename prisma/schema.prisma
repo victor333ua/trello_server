@@ -26,7 +26,7 @@ model Group {
 
 model Column {
     id String @id @default(uuid())    
-    name String 
+    name String @unique 
     index Int
     groupId String
     group Group @relation(fields: [groupId], references:[id])   
@@ -36,7 +36,9 @@ model Column {
 model Task {
     id String @id @default(uuid())
     name String
-    index Int
+    prevId String?  @unique
+    prevTask Task?  @relation("linkedList", fields: [prevId], references: [id])
+    nextTask Task?  @relation("linkedList")
     columnId String
     column Column @relation(fields: [columnId], references:[id])   
     list Item[]

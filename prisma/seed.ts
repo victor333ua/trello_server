@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { addNewTask, updateTask } from '../src/utils/crudTask'
 
 const prisma = new PrismaClient();
 
 async function main() {
-
     const group = await prisma.group.create({
         data: { name: 'home',
                 columns: {
@@ -14,7 +14,6 @@ async function main() {
                             tasks: {
                               create: {
                                 name: 'task1',
-                                index: 0,
                                 list: {
                                   create: [
                                     { text: 'item1'},
@@ -36,7 +35,21 @@ async function main() {
                 }
               }
     });
-    console.log(group);
+    const column = await prisma.column.findUnique({
+      where: { name: 'ToDo' },
+      include: {
+        tasks: true
+      }
+    });
+
+    const newTask = await addNewTask({ columnId: column!.id, name: 'task2'});
+    const task = await updateTask({
+      ...newTask,
+      text: 'sample for testing',
+      list: [ 'item1', 'item2' ]
+    });
+
+    // console.log(group);
   };
   
   main()

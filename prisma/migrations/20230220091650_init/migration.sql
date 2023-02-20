@@ -27,8 +27,10 @@ CREATE TABLE "Column" (
 CREATE TABLE "Task" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
-    "index" INTEGER NOT NULL,
+    "prevId" TEXT,
     "columnId" TEXT NOT NULL,
+    "text" TEXT,
+    CONSTRAINT "Task_prevId_fkey" FOREIGN KEY ("prevId") REFERENCES "Task" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "Task_columnId_fkey" FOREIGN KEY ("columnId") REFERENCES "Column" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -55,3 +57,9 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Group_name_key" ON "Group"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Column_name_key" ON "Column"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Task_prevId_key" ON "Task"("prevId");

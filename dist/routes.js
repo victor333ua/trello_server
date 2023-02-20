@@ -14,42 +14,67 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const index_1 = require("./index");
-const objToArray_1 = require("./utils/objToArray");
+const crudTask_1 = require("./utils/crudTask");
+const itemsToArray_1 = require("./utils/itemsToArray");
+const sortedArrayFromLinkedList_1 = require("./utils/sortedArrayFromLinkedList");
 const router = express_1.default.Router();
 router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { groupId } = req.params;
     try {
         let columns = yield index_1.prisma.column.findMany({
             where: { groupId },
-            orderBy: { index: 'asc' },
             include: {
                 tasks: {
                     include: {
-                        list: {
-                            select: { text: true }
-                        }
+                        list: true
                     },
-                    orderBy: { index: 'asc' }
                 }
             }
         });
-        columns = (0, objToArray_1.objToArray)(columns);
-        res.json({ columns });
+        let tasks_;
+        const output = columns.map(column => {
+            tasks_ = null;
+            if (column.tasks && column.tasks.length != 0) {
+                const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
+                tasks_ = sorted.map(task => (0, itemsToArray_1.itemsToArray)(task));
+            }
+            return (Object.assign(Object.assign({}, column), { tasks: tasks_ }));
+        });
+        res.json({ columns: output });
     }
     catch (error) {
         console.log('err=', error);
         res.status(500).send(error);
     }
 }));
-router.get('/tasks', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const tasks = yield index_1.prisma.task.findMany();
-        res.json(tasks);
-    }
-    catch (error) {
-        console.log('err=', error);
-        res.status(500).send(error);
-    }
+router.post('/addTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { columnId, name } = req.body;
+    const newTask = yield (0, crudTask_1.addNewTask)({ columnId, name });
+    res.json({ id: newTask.id });
+}));
+router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const task = req.body;
+    const updatedTask = yield (0, crudTask_1.updateTask)(task);
+    if (updatedTask)
+        res.status(400).send('success');
+    else
+        res.status(500);
+}));
+router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = req.body;
+    const movedTask = yield (0, crudTask_1.moveTask)(data);
+    if (movedTask)
+        res.status(400).send('success');
+    else
+        res.status(500);
+}));
+router.delete('/deleteTask/:idTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { idTask } = req.params;
+    const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true });
+    if (id)
+        res.status(400).send('success');
+    else
+        res.status(500);
 }));
 exports.default = router;
 //# sourceMappingURL=routes.js.map

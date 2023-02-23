@@ -49,32 +49,45 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
 }));
 router.post('/addTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { columnId, name } = req.body;
-    const newTask = yield (0, crudTask_1.addNewTask)({ columnId, name });
-    res.json({ id: newTask.id });
+    if (!columnId || !name)
+        res.sendStatus(500);
+    try {
+        const newTask = yield (0, crudTask_1.addNewTask)({ columnId, name });
+        res.json({ id: newTask.id });
+    }
+    catch (err) {
+        res.sendStatus(500);
+    }
 }));
 router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const task = req.body;
     const updatedTask = yield (0, crudTask_1.updateTask)(task);
-    if (updatedTask)
-        res.status(400).send('success');
-    else
-        res.status(500);
+    if (updatedTask) {
+        res.sendStatus(400);
+    }
+    else {
+        res.sendStatus(500);
+    }
 }));
 router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     const movedTask = yield (0, crudTask_1.moveTask)(data);
-    if (movedTask)
-        res.status(400).send('success');
-    else
-        res.status(500);
+    if (movedTask) {
+        res.sendStatus(400);
+    }
+    else {
+        res.sendStatus(500);
+    }
 }));
 router.delete('/deleteTask/:idTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { idTask } = req.params;
     const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true });
-    if (id)
-        res.status(400).send('success');
-    else
-        res.status(500);
+    if (id) {
+        res.sendStatus(400);
+    }
+    else {
+        res.sendStatus(500);
+    }
 }));
 exports.default = router;
 //# sourceMappingURL=routes.js.map

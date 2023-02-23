@@ -8,8 +8,10 @@ const express_1 = __importDefault(require("express"));
 const client_1 = require("@prisma/client");
 const cors_1 = __importDefault(require("cors"));
 const routes_1 = __importDefault(require("./routes"));
+const body_parser_1 = __importDefault(require("body-parser"));
 exports.prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
+app.use(body_parser_1.default.json());
 const corsOptions = {
     origin: [
         process.env.CORS_ORIGIN,

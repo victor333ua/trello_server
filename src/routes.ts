@@ -38,29 +38,34 @@ router.get('/feed/:groupId', async (req, res) => {
 
  router.post('/addTask', async (req, res) => {
     const { columnId, name } = req.body;
-    const newTask = await addNewTask({ columnId, name });
-    res.json({id: newTask.id}); 
+    if (!columnId || !name) res.sendStatus(500);
+    try {
+        const newTask = await addNewTask({ columnId, name });
+        res.json({id: newTask.id});
+    } catch(err: any) {
+        res.sendStatus(500);
+    }
  });
 
  router.post('/updateTask', async (req, res) => {
     const task: Task_ = req.body;
     const updatedTask = await updateTask(task);
-    if (updatedTask) res.status(400).send('success'); 
-    else res.status(500);
+    if (updatedTask)  { res.sendStatus(400); }
+    else { res.sendStatus(500);}
  });
 
  router.post('/moveTask', async (req, res) => {
     const data: TPropsMoveTask = req.body;
     const movedTask = await moveTask(data);
-    if (movedTask) res.status(400).send('success'); 
-    else res.status(500);
+    if (movedTask) {res.sendStatus(400);} 
+    else {res.sendStatus(500);}
  });
 
  router.delete('/deleteTask/:idTask', async (req, res) => {
     const { idTask } = req.params;
     const id = await deleteTask({ id: idTask, isDelete: true });
-    if (id) res.status(400).send('success'); 
-    else res.status(500);
+    if (id) {res.sendStatus(400);} 
+    else {res.sendStatus(500);}
  });
 
 export default router

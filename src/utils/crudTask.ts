@@ -29,69 +29,84 @@ export const addNewTask = async ({ columnId, name }: TPropsAddNewTask) => {
 };
 
 export const deleteTask = async ({ id, isDelete }: TPropsDeleteTask) => {
-    let toDelete = await prisma.task.findUnique({
-        where: { id }
-    });
-    const nextToDelete = await prisma.task.update({
-        where: { prevId: toDelete!.id },
-        data: {
-            prevId: toDelete!.prevId
-        }
-    });
-    if (isDelete) {
-        toDelete = await prisma.task.delete({
+    let toDelete;
+    try {
+        toDelete = await prisma.task.findUnique({
             where: { id }
         });
+    } catch(err) {
+        throw new Error("task to delete not exist");
+    };
+    try {
+        const nextToDelete = await prisma.task.update({
+            where: { prevId: toDelete!.id },
+            data: {
+                prevId: toDelete!.prevId
+            }
+        });
+    } catch(err) {};
+    try {
+        if (isDelete) {
+            toDelete = await prisma.task.delete({
+                where: { id }
+            });
+        }
+    } catch(err) {
+        throw new Error("can't delete task");
     }
     return toDelete!.id;
 };
 
-export const moveTask = async ({ idAfterTaskOrColumn, idToMove, isFirst }: TPropsMoveTask) => {
+export const moveTask = async (
+    {  idColumn: columnId, idAfterTask, idToMove, isFirst }: TPropsMoveTask) => {
     let toMove;
     // if we move to the start of column
     if (isFirst) {
-        const firstTask = await prisma.task.findFirst({
-            where: { 
-                AND: [
-                    { columnId: idAfterTaskOrColumn },
-                    { prevId: undefined },
-                ] 
-            }
-        });
-        if (firstTask) {
+        try {
             await prisma.task.update({
-                where: { id: firstTask.id },
+                where: {
+                    AND: [
+                        { columnId },
+                        { prevId: null }
+                    ] 
+                },
                 data: {
                     prevId: idToMove
                 }    
-            });
+            });        
         };
-        toMove = await prisma.task.update({
-            where: { id: idToMove },
-            data: {
-                columnId: idAfterTaskOrColumn,
-                prevId: undefined
-            }    
-        });
+            toMove = await prisma.task.update({
+                where: { id: idToMove },
+                data: {
+                    columnId,
+                    prevId: null
+                }    
+            });
+        } catch(err) {
+            throw Error("can't move task to 1st place in new column");
+        }
     } else {
-        const nextToInsert = await prisma.task.update({
-            where: {
-                prevId: idAfterTaskOrColumn
-            },
-            data: {
-                prevId: idToMove
-            }
-        });
+        const idToRemove = await deleteTask({ id: idToMove, isDelete: false });
+        try {
+            const nextToInsert = await prisma.task.update({
+                where: {
+                    prevId: idAfterTask
+                },
+                data: {
+                    prevId: idToMove
+                }
+            });
+        } catch(err) {};
+
         toMove = await prisma.task.update({
             where: {
                 id: idToMove
             },
             data: {
-                prevId: idAfterTaskOrColumn,
-                columnId: nextToInsert.columnId
+                prevId: idAfterTask,
+                columnId
             }
         });
-        const idToRemove = await deleteTask({ id: idToMove, isDelete: false });
     }
     return toMove;
 };

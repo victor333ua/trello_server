@@ -7,8 +7,9 @@ export type Task_ = {
     text: string | null
 };
 export type TPropsMoveTask = {
-    idAfterTaskOrColumn: string,
+    idAfterTask: string,
     idToMove: string,
+    idColumn: string,
     isFirst: boolean
 };
 export type TPropsDeleteTask = {

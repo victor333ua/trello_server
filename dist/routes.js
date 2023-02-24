@@ -33,7 +33,7 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
         let tasks_;
         const output = columns.map(column => {
-            tasks_ = null;
+            tasks_ = [];
             if (column.tasks && column.tasks.length != 0) {
                 const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
                 tasks_ = sorted.map(task => (0, itemsToArray_1.itemsToArray)(task));

@@ -13,8 +13,8 @@
             ],
             "program": "${workspaceFolder}\\src\\index.ts",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
+                "${workspaceFolder}/dist/**/*.js"
+            ],
         }
     ]
 }

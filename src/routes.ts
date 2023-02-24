@@ -22,7 +22,7 @@ router.get('/feed/:groupId', async (req, res) => {
         }); 
         let tasks_: Task_[] | null;
         const output = columns.map(column => {
-            tasks_ = null;
+            tasks_ = [];
             if (column.tasks && column.tasks.length != 0) {
                 const sorted =  sortedArrayFromLinkedList(column.tasks);
                 tasks_ = sorted!.map(task => itemsToArray(task));

@@ -65,56 +65,40 @@ export const deleteTask = async ({ id, isDelete }: TPropsDeleteTask) => {
 };
 
 export const moveTask = async (
-    {  idColumn: columnId, idAfterTask, idToMove, isFirst }: TPropsMoveTask) => {
+    {  idColumn: columnId, idAfterTask, idToMove }: TPropsMoveTask) => {
     let toMove;
-    // if we move to the start of column
-    if (isFirst) {
-        try {
-            await prisma.task.updateMany({
-                where: {
-                    AND: [
-                        { columnId },
-                        { prevId: null }
-                    ] 
-                },
-                data: {
-                    prevId: idToMove
-                }    
-            }); 
-        } catch(err) {};      
-        try {
-            toMove = await prisma.task.update({
-                where: { id: idToMove },
-                data: {
-                    columnId,
-                    prevId: null
-                }    
-            });
-        } catch(err) {
-            throw Error("can't move task to 1st place in new column");
-        }
-    } else {
+// remove from old place
+    try {
         const idToRemove = await deleteTask({ id: idToMove, isDelete: false });
-        try {
-            const nextToInsert = await prisma.task.update({
-                where: {
-                    prevId: idAfterTask
-                },
-                data: {
-                    prevId: idToMove
-                }
-            });
-        } catch(err) {};
-
-        toMove = await prisma.task.update({
+    } catch(err) {
+        throw Error("can't remove from old place");
+    }
+    try {
+        const count = await prisma.task.updateMany({
             where: {
-                id: idToMove
+                AND: [
+                    { columnId: columnId },
+                    { prevId: idAfterTask }
+                ] 
             },
             data: {
-                prevId: idAfterTask,
-                columnId
-            }
+                prevId: idToMove
+            }    
+        }); 
+        console.log(count);
+    } catch(err) {
+        console.log(err);
+    };      
+    try {
+        toMove = await prisma.task.update({
+            where: { id: idToMove },
+            data: {
+                columnId,
+                prevId: idAfterTask
+            }    
         });
+    } catch(err) {
+        throw Error("can't update moved task");
     }
     return toMove;
 };

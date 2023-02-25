@@ -14,10 +14,10 @@ const sortedArrayFromLinkedList = (taskList) => {
             indexedIds.set(task.prevId, i);
     });
     if (!currentId)
-        return;
+        throw Error("no 1st element in the list");
     while (taskArray.length != taskList.length) {
         currentTask = taskList[indexedIds.get(currentId)];
-        taskArray.unshift(currentTask);
+        taskArray.push(currentTask);
         currentId = currentTask.id;
     }
     ;

@@ -1,30 +1,37 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Task } from '@prisma/client';
 import { Task_, TPropsAddNewTask, TPropsDeleteTask, TPropsMoveTask } from '../types';
+import { sortedArrayFromLinkedList } from './sortedArrayFromLinkedList';
 const prisma = new PrismaClient();
 
 export const addNewTask = async ({ columnId, name }: TPropsAddNewTask) => {
-    const firstTask = await prisma.task.findFirst({
-        where: { 
-            AND: [
-                { columnId },
-                { prevId: undefined },
-            ] 
-        }
-    });
-    const newTask = await prisma.task.create({
-        data: {
-            columnId,
-            name
-        }
-    });
-    if (firstTask) {
-        await prisma.task.update({
-            where: { id: firstTask.id },
-            data: {
-                prevId: newTask.id
-            }    
-        })
+    let column = null;
+    try {
+        column = await prisma.column.findUnique({
+            where: {
+                id: columnId
+            },
+            include: { tasks: true }
+        });
+    } catch(err) {
+        throw Error("illegal columnId");
+    }
+    let last = null;
+    if (column!.tasks && column!.tasks.length != 0) {
+        const sorted =  sortedArrayFromLinkedList<Task>(column!.tasks);
+        last = sorted[sorted.length - 1];
     };
+    let newTask;
+    try {
+        newTask = await prisma.task.create({
+            data: {
+                columnId,
+                name,
+                prevId: last ? last.id : null
+            }
+        });
+    } catch(err) {
+        throw Error("can't create new task");
+    }
     return newTask;
 };
 
@@ -63,7 +70,7 @@ export const moveTask = async (
     // if we move to the start of column
     if (isFirst) {
         try {
-            await prisma.task.update({
+            await prisma.task.updateMany({
                 where: {
                     AND: [
                         { columnId },
@@ -73,8 +80,9 @@ export const moveTask = async (
                 data: {
                     prevId: idToMove
                 }    
-            });        
-        };
+            }); 
+        } catch(err) {};      
+        try {
             toMove = await prisma.task.update({
                 where: { id: idToMove },
                 data: {

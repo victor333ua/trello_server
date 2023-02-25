@@ -31,9 +31,8 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
                 }
             }
         });
-        let tasks_;
         const output = columns.map(column => {
-            tasks_ = [];
+            let tasks_ = Array();
             if (column.tasks && column.tasks.length != 0) {
                 const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
                 tasks_ = sorted.map(task => (0, itemsToArray_1.itemsToArray)(task));
@@ -63,7 +62,7 @@ router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, funct
     const task = req.body;
     const updatedTask = yield (0, crudTask_1.updateTask)(task);
     if (updatedTask) {
-        res.sendStatus(400);
+        res.sendStatus(204);
     }
     else {
         res.sendStatus(500);
@@ -71,11 +70,11 @@ router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
-    const movedTask = yield (0, crudTask_1.moveTask)(data);
-    if (movedTask) {
-        res.sendStatus(400);
+    try {
+        const movedTask = yield (0, crudTask_1.moveTask)(data);
+        res.sendStatus(204);
     }
-    else {
+    catch (err) {
         res.sendStatus(500);
     }
 }));
@@ -83,7 +82,7 @@ router.delete('/deleteTask/:idTask', (req, res) => __awaiter(void 0, void 0, voi
     const { idTask } = req.params;
     const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true });
     if (id) {
-        res.sendStatus(400);
+        res.sendStatus(204);
     }
     else {
         res.sendStatus(500);

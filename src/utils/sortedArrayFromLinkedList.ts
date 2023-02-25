@@ -1,9 +1,12 @@
-import { TTaskItems } from "../types";
+interface LinkedList {
+    id: string,
+    prevId: string | null
+}
 
-export const sortedArrayFromLinkedList = (taskList: TTaskItems[]) => {
-    const taskArray = Array<TTaskItems>();
+export const sortedArrayFromLinkedList = <T extends LinkedList>(taskList: T[]) => {
+    const taskArray = Array<T>();
     const indexedIds = new Map<string, number>();
-    let currentId = null, currentTask: TTaskItems;
+    let currentId = null, currentTask: T;
 
     taskList.forEach((task, i) => {
         if (task.prevId === null) {
@@ -13,11 +16,11 @@ export const sortedArrayFromLinkedList = (taskList: TTaskItems[]) => {
         else indexedIds.set(task.prevId, i);  
     });
 
-    if (!currentId) return;
+    if (!currentId) throw Error("no 1st element in the list");
 
     while (taskArray.length != taskList.length) {
         currentTask = taskList[indexedIds.get(currentId)!];
-        taskArray.unshift(currentTask);
+        taskArray.push(currentTask);
         currentId = currentTask.id;
     };
 

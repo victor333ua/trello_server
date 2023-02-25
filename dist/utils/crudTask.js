@@ -9,33 +9,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateTask = exports.idToRemove = exports.moveTask = exports.deleteTask = exports.addNewTask = void 0;
+exports.updateTask = exports.moveTask = exports.deleteTask = exports.addNewTask = void 0;
 const client_1 = require("@prisma/client");
+const sortedArrayFromLinkedList_1 = require("./sortedArrayFromLinkedList");
 const prisma = new client_1.PrismaClient();
 const addNewTask = ({ columnId, name }) => __awaiter(void 0, void 0, void 0, function* () {
-    const firstTask = yield prisma.task.findFirst({
-        where: {
-            AND: [
-                { columnId },
-                { prevId: undefined },
-            ]
-        }
-    });
-    const newTask = yield prisma.task.create({
-        data: {
-            columnId,
-            name
-        }
-    });
-    if (firstTask) {
-        yield prisma.task.update({
-            where: { id: firstTask.id },
+    let column = null;
+    try {
+        column = yield prisma.column.findUnique({
+            where: {
+                id: columnId
+            },
+            include: { tasks: true }
+        });
+    }
+    catch (err) {
+        throw Error("illegal columnId");
+    }
+    let last = null;
+    if (column.tasks && column.tasks.length != 0) {
+        const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
+        last = sorted[sorted.length - 1];
+    }
+    ;
+    let newTask;
+    try {
+        newTask = yield prisma.task.create({
             data: {
-                prevId: newTask.id
+                columnId,
+                name,
+                prevId: last ? last.id : null
             }
         });
     }
-    ;
+    catch (err) {
+        throw Error("can't create new task");
+    }
     return newTask;
 });
 exports.addNewTask = addNewTask;
@@ -77,7 +86,7 @@ const moveTask = ({ idColumn: columnId, idAfterTask, idToMove, isFirst }) => __a
     let toMove;
     if (isFirst) {
         try {
-            yield prisma.task.update({
+            yield prisma.task.updateMany({
                 where: {
                     AND: [
                         { columnId },
@@ -89,45 +98,48 @@ const moveTask = ({ idColumn: columnId, idAfterTask, idToMove, isFirst }) => __a
                 }
             });
         }
-        finally { }
+        catch (err) { }
+        ;
+        try {
+            toMove = yield prisma.task.update({
+                where: { id: idToMove },
+                data: {
+                    columnId,
+                    prevId: null
+                }
+            });
+        }
+        catch (err) {
+            throw Error("can't move task to 1st place in new column");
+        }
+    }
+    else {
+        const idToRemove = yield (0, exports.deleteTask)({ id: idToMove, isDelete: false });
+        try {
+            const nextToInsert = yield prisma.task.update({
+                where: {
+                    prevId: idAfterTask
+                },
+                data: {
+                    prevId: idToMove
+                }
+            });
+        }
+        catch (err) { }
         ;
         toMove = yield prisma.task.update({
-            where: { id: idToMove },
+            where: {
+                id: idToMove
+            },
             data: {
-                columnId,
-                prevId: null
+                prevId: idAfterTask,
+                columnId
             }
         });
     }
-    try { }
-    catch (err) {
-        throw Error("can't move task to 1st place in new column");
-    }
+    return toMove;
 });
 exports.moveTask = moveTask;
-try {
-    const nextToInsert = await prisma.task.update({
-        where: {
-            prevId: idAfterTask
-        },
-        data: {
-            prevId: idToMove
-        }
-    });
-}
-catch (err) { }
-;
-toMove = await prisma.task.update({
-    where: {
-        id: idToMove
-    },
-    data: {
-        prevId: idAfterTask,
-        columnId
-    }
-});
-return toMove;
-;
 const updateTask = (task) => __awaiter(void 0, void 0, void 0, function* () {
     const { id, name, text, list } = task;
     const upd = yield prisma.task.update({

@@ -1,6 +1,6 @@
 import express from 'express'
 import { prisma } from './index';
-import { Task_, TPropsMoveTask } from './types';
+import { Task_, TPropsMoveTask, TTaskItems } from './types';
 import { addNewTask, deleteTask, moveTask, updateTask } from './utils/crudTask';
 import { itemsToArray } from './utils/itemsToArray';
 import { sortedArrayFromLinkedList } from './utils/sortedArrayFromLinkedList';
@@ -20,11 +20,10 @@ router.get('/feed/:groupId', async (req, res) => {
                 }
             }
         }); 
-        let tasks_: Task_[] | null;
         const output = columns.map(column => {
-            tasks_ = [];
+            let tasks_ = Array<Task_>();
             if (column.tasks && column.tasks.length != 0) {
-                const sorted =  sortedArrayFromLinkedList(column.tasks);
+                const sorted =  sortedArrayFromLinkedList<TTaskItems>(column.tasks);
                 tasks_ = sorted!.map(task => itemsToArray(task));
             }
             return ({...column, tasks: tasks_});
@@ -50,21 +49,24 @@ router.get('/feed/:groupId', async (req, res) => {
  router.post('/updateTask', async (req, res) => {
     const task: Task_ = req.body;
     const updatedTask = await updateTask(task);
-    if (updatedTask)  { res.sendStatus(400); }
+    if (updatedTask)  { res.sendStatus(204); }
     else { res.sendStatus(500);}
  });
 
  router.post('/moveTask', async (req, res) => {
     const data: TPropsMoveTask = req.body;
-    const movedTask = await moveTask(data);
-    if (movedTask) {res.sendStatus(400);} 
-    else {res.sendStatus(500);}
+    try {   
+        const movedTask = await moveTask(data);
+        res.sendStatus(204);
+    } catch(err){
+        res.sendStatus(500);
+    }
  });
 
  router.delete('/deleteTask/:idTask', async (req, res) => {
     const { idTask } = req.params;
     const id = await deleteTask({ id: idTask, isDelete: true });
-    if (id) {res.sendStatus(400);} 
+    if (id) {res.sendStatus(204);} 
     else {res.sendStatus(500);}
  });
 

@@ -37,7 +37,7 @@ model Task {
     id String @id @default(uuid())
     name String
     prevId String?  
-    prevTask Task?  @relation("linkedList", fields: [prevId], references: [id])
+    prevTask Task?  @relation("linkedList", fields: [prevId], references: [id], onDelete: NoAction, onUpdate: NoAction)
     nextTasks Task[]  @relation("linkedList")
     columnId String
     column Column @relation(fields: [columnId], references:[id])   

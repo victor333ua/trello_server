@@ -43,27 +43,32 @@ export const deleteTask = async ({ id, isDelete, tx }: TPropsDeleteTask) => {
             where: { id }
         });
     } catch(err) {
+        console.log(err);
         throw new Error("task to delete not exist");
     };
     try {
-        nextToDelete = await tx.task.update({
+        nextToDelete = await tx.task.updateMany({
             where: { prevId: toDelete!.id },
             data: {
                 prevId: toDelete!.prevId
             }
         });
-    } catch(err) {};
+    } catch(err) {
+        console.log(err);
+        throw Error("can't update next to delete");
+    };
     try {
         if (isDelete) {
             toDelete = await tx.task.delete({
                 where: { id }
             });
-        } else {
-            await tx.task.update({
-                where: { id },
-                data: { prevId: id } // to avoid violation unique constrain
-            })
-        }
+        } 
+        // else {
+        //     await tx.task.update({
+        //         where: { id },
+        //         data: { prevId: undefined} // to avoid violation unique constrain
+        //     })
+        // }
     } catch(err) {
         throw new Error("can't delete task");
     }

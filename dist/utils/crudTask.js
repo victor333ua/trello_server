@@ -58,29 +58,27 @@ const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, f
         });
     }
     catch (err) {
+        console.log(err);
         throw new Error("task to delete not exist");
     }
     ;
     try {
-        nextToDelete = yield tx.task.update({
+        nextToDelete = yield tx.task.updateMany({
             where: { prevId: toDelete.id },
             data: {
                 prevId: toDelete.prevId
             }
         });
     }
-    catch (err) { }
+    catch (err) {
+        console.log(err);
+        throw Error("can't update next to delete");
+    }
     ;
     try {
         if (isDelete) {
             toDelete = yield tx.task.delete({
                 where: { id }
-            });
-        }
-        else {
-            yield tx.task.update({
-                where: { id },
-                data: { prevId: id }
             });
         }
     }

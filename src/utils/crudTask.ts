@@ -1,4 +1,4 @@
-import { PrismaClient, Task } from '@prisma/client';
+import { Prisma, PrismaClient, Task } from '@prisma/client';
 import { Task_, TPropsAddNewTask, TPropsDeleteTask, TPropsMoveTask } from '../types';
 import { sortedArrayFromLinkedList } from './sortedArrayFromLinkedList';
 const prisma = new PrismaClient();
@@ -35,17 +35,18 @@ export const addNewTask = async ({ columnId, name }: TPropsAddNewTask) => {
     return newTask;
 };
 
-export const deleteTask = async ({ id, isDelete }: TPropsDeleteTask) => {
-    let toDelete;
+export const deleteTask = async ({ id, isDelete, tx }: TPropsDeleteTask) => {
+    if (!tx) tx = prisma;
+    let toDelete, nextToDelete;
     try {
-        toDelete = await prisma.task.findUnique({
+        toDelete = await tx.task.findUnique({
             where: { id }
         });
     } catch(err) {
         throw new Error("task to delete not exist");
     };
     try {
-        const nextToDelete = await prisma.task.update({
+        nextToDelete = await tx.task.update({
             where: { prevId: toDelete!.id },
             data: {
                 prevId: toDelete!.prevId
@@ -54,53 +55,64 @@ export const deleteTask = async ({ id, isDelete }: TPropsDeleteTask) => {
     } catch(err) {};
     try {
         if (isDelete) {
-            toDelete = await prisma.task.delete({
+            toDelete = await tx.task.delete({
                 where: { id }
             });
+        } else {
+            await tx.task.update({
+                where: { id },
+                data: { prevId: id } // to avoid violation unique constrain
+            })
         }
     } catch(err) {
         throw new Error("can't delete task");
     }
-    return toDelete!.id;
+    return toDelete;
 };
 
 export const moveTask = async (
     {  idColumn: columnId, idAfterTask, idToMove }: TPropsMoveTask) => {
-    let toMove;
+
+    await prisma.$transaction(async (tx) => {
+        let toMove;
 // remove from old place
-    try {
-        const idToRemove = await deleteTask({ id: idToMove, isDelete: false });
-    } catch(err) {
-        throw Error("can't remove from old place");
-    }
-    try {
-        const count = await prisma.task.updateMany({
-            where: {
-                AND: [
-                    { columnId: columnId },
-                    { prevId: idAfterTask }
-                ] 
-            },
-            data: {
-                prevId: idToMove
-            }    
-        }); 
-        console.log(count);
-    } catch(err) {
-        console.log(err);
-    };      
-    try {
-        toMove = await prisma.task.update({
-            where: { id: idToMove },
-            data: {
-                columnId,
-                prevId: idAfterTask
-            }    
-        });
-    } catch(err) {
-        throw Error("can't update moved task");
-    }
-    return toMove;
+        try {
+            await deleteTask({ id: idToMove, isDelete: false, tx });
+        } catch(err) {
+            throw Error("can't remove from old place");
+        }
+        try {
+// update next to insert, may be absent
+            const count = await tx.task.updateMany({
+                where: {
+                    AND: [
+                        { columnId }, // neccessary, if idAfterTask = null
+                        { prevId: idAfterTask }
+                    ] 
+                },
+                data: {
+                    prevId: idToMove
+                }    
+            }); 
+        } catch(err) {
+            // if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            //     if (err.code != 'P2002') // ignore unique prevId constrain error
+                    throw Error('update next to insert error');
+            // }
+        };      
+        try {
+            toMove = await tx.task.update({
+                where: { id: idToMove },
+                data: {
+                    columnId,
+                    prevId: idAfterTask
+                }    
+            });
+        } catch(err) {
+            throw Error("can't update moved task");
+        }
+        return toMove;
+    });
 };
 export const updateTask = async (task: Task_) => {
     const { id, name, text, list } = task;

@@ -80,7 +80,7 @@ router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, functio
 }));
 router.delete('/deleteTask/:idTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { idTask } = req.params;
-    const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true });
+    const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true, tx: null });
     if (id) {
         res.sendStatus(204);
     }

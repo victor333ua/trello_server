@@ -14,7 +14,8 @@ export type TPropsMoveTask = {
 };
 export type TPropsDeleteTask = {
     id: string,
-    isDelete: boolean
+    isDelete: boolean,
+    tx: any
 };
 export type TPropsAddNewTask = {
     columnId: string,

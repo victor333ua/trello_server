@@ -65,7 +65,7 @@ router.get('/feed/:groupId', async (req, res) => {
 
  router.delete('/deleteTask/:idTask', async (req, res) => {
     const { idTask } = req.params;
-    const id = await deleteTask({ id: idTask, isDelete: true });
+    const id = await deleteTask({ id: idTask, isDelete: true, tx: null });
     if (id) {res.sendStatus(204);} 
     else {res.sendStatus(500);}
  });

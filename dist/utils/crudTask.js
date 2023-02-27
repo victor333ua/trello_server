@@ -48,10 +48,12 @@ const addNewTask = ({ columnId, name }) => __awaiter(void 0, void 0, void 0, fun
     return newTask;
 });
 exports.addNewTask = addNewTask;
-const deleteTask = ({ id, isDelete }) => __awaiter(void 0, void 0, void 0, function* () {
-    let toDelete;
+const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!tx)
+        tx = prisma;
+    let toDelete, nextToDelete;
     try {
-        toDelete = yield prisma.task.findUnique({
+        toDelete = yield tx.task.findUnique({
             where: { id }
         });
     }
@@ -60,7 +62,7 @@ const deleteTask = ({ id, isDelete }) => __awaiter(void 0, void 0, void 0, funct
     }
     ;
     try {
-        const nextToDelete = yield prisma.task.update({
+        nextToDelete = yield tx.task.update({
             where: { prevId: toDelete.id },
             data: {
                 prevId: toDelete.prevId
@@ -71,56 +73,63 @@ const deleteTask = ({ id, isDelete }) => __awaiter(void 0, void 0, void 0, funct
     ;
     try {
         if (isDelete) {
-            toDelete = yield prisma.task.delete({
+            toDelete = yield tx.task.delete({
                 where: { id }
+            });
+        }
+        else {
+            yield tx.task.update({
+                where: { id },
+                data: { prevId: id }
             });
         }
     }
     catch (err) {
         throw new Error("can't delete task");
     }
-    return toDelete.id;
+    return toDelete;
 });
 exports.deleteTask = deleteTask;
 const moveTask = ({ idColumn: columnId, idAfterTask, idToMove }) => __awaiter(void 0, void 0, void 0, function* () {
-    let toMove;
-    try {
-        const idToRemove = yield (0, exports.deleteTask)({ id: idToMove, isDelete: false });
-    }
-    catch (err) {
-        throw Error("can't remove from old place");
-    }
-    try {
-        const count = yield prisma.task.updateMany({
-            where: {
-                AND: [
-                    { columnId: columnId },
-                    { prevId: idAfterTask }
-                ]
-            },
-            data: {
-                prevId: idToMove
-            }
-        });
-        console.log(count);
-    }
-    catch (err) {
-        console.log(err);
-    }
-    ;
-    try {
-        toMove = yield prisma.task.update({
-            where: { id: idToMove },
-            data: {
-                columnId,
-                prevId: idAfterTask
-            }
-        });
-    }
-    catch (err) {
-        throw Error("can't update moved task");
-    }
-    return toMove;
+    yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        let toMove;
+        try {
+            yield (0, exports.deleteTask)({ id: idToMove, isDelete: false, tx });
+        }
+        catch (err) {
+            throw Error("can't remove from old place");
+        }
+        try {
+            const count = yield tx.task.updateMany({
+                where: {
+                    AND: [
+                        { columnId },
+                        { prevId: idAfterTask }
+                    ]
+                },
+                data: {
+                    prevId: idToMove
+                }
+            });
+        }
+        catch (err) {
+            throw Error('update next to insert error');
+        }
+        ;
+        try {
+            toMove = yield tx.task.update({
+                where: { id: idToMove },
+                data: {
+                    columnId,
+                    prevId: idAfterTask
+                }
+            });
+        }
+        catch (err) {
+            throw Error("can't update moved task");
+        }
+        return toMove;
+    }));
 });
 exports.moveTask = moveTask;
 const updateTask = (task) => __awaiter(void 0, void 0, void 0, function* () {

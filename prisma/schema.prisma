@@ -27,7 +27,9 @@ model Group {
 model Column {
     id String @id @default(uuid())    
     name String @unique 
-    index Int
+    prevId String?
+    prevColumn Column?  @relation("llColumn", fields: [prevId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    nextColumns Column[]  @relation("llColumn")
     groupId String
     group Group @relation(fields: [groupId], references:[id])   
     tasks Task[]

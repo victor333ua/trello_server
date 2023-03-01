@@ -1,11 +1,23 @@
+import { Column } from '@prisma/client';
 import express from 'express'
 import { prisma } from './index';
-import { Task_, TPropsMoveTask, TTaskItems } from './types';
+import { Task_, TPropsMove, TTaskItems } from './types';
+import { addNewColumn, deleteColumn, moveColumn, updateColumn } from './utils/crudColumn';
 import { addNewTask, deleteTask, moveTask, updateTask } from './utils/crudTask';
 import { itemsToArray } from './utils/itemsToArray';
 import { sortedArrayFromLinkedList } from './utils/sortedArrayFromLinkedList';
 
 const router = express.Router();
+
+router.get('/groups', async (req, res) => {
+    let groups;
+    try {
+        groups = await prisma.group.findMany();
+        res.json(groups);
+    } catch(err: any){
+        res.status(500).send(err.message);
+    }
+});
 
 router.get('/feed/:groupId', async (req, res) => {
     const { groupId } = req.params;
@@ -29,45 +41,94 @@ router.get('/feed/:groupId', async (req, res) => {
             return ({...column, tasks: tasks_});
         });      
         res.json({columns: output});
-    } catch(error){
-        console.log('err=', error);
-        res.status(500).send(error);
+    } catch(err: any){
+        console.log('err=', err);
+        res.status(500).send(err.message);
     }
 });
 
  router.post('/addTask', async (req, res) => {
-    const { columnId, name } = req.body;
-    if (!columnId || !name) res.sendStatus(500);
+    const { idParent, name } = req.body;
+    if (!idParent || !name) res.sendStatus(500);
     try {
-        const newTask = await addNewTask({ columnId, name });
+        const newTask = await addNewTask({ idParent, name });
         res.json({id: newTask.id});
     } catch(err: any) {
-        res.sendStatus(500);
+        res.status(500).send(err.message);
     }
  });
 
  router.post('/updateTask', async (req, res) => {
     const task: Task_ = req.body;
-    const updatedTask = await updateTask(task);
-    if (updatedTask)  { res.sendStatus(204); }
-    else { res.sendStatus(500);}
- });
-
- router.post('/moveTask', async (req, res) => {
-    const data: TPropsMoveTask = req.body;
-    try {   
-        const movedTask = await moveTask(data);
-        res.sendStatus(204);
-    } catch(err){
-        res.sendStatus(500);
+    let upd;
+    try {
+        upd = await updateTask(task);
+        res.sendStatus(204); 
+    } catch(err: any) {
+        res.status(500).send(err.message);
     }
  });
 
- router.delete('/deleteTask/:idTask', async (req, res) => {
-    const { idTask } = req.params;
-    const id = await deleteTask({ id: idTask, isDelete: true, tx: null });
-    if (id) {res.sendStatus(204);} 
-    else {res.sendStatus(500);}
+ router.post('/moveTask', async (req, res) => {
+    const data: TPropsMove = req.body;
+    try {   
+        const movedTask = await moveTask(data);
+        res.sendStatus(204);
+    } catch(err: any) {
+        res.status(500).send(err.message);
+    }
+ });
+
+ router.delete('/deleteTask/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await deleteTask({ id, isDelete: true, tx: null });
+        res.sendStatus(204);
+    } catch(err: any) {
+        res.status(500).send(err.message);
+    }
+ });
+
+// columns
+ router.post('/addColumn', async (req, res) => {
+    const { idParent, name } = req.body;
+    if (!idParent || !name) res.sendStatus(500);
+    try {
+        const newColumn = await addNewColumn({ idParent, name });
+        res.json({id: newColumn.id});
+    } catch(err: any) {
+    res.status(500).send(err.message);
+    }
+ });
+
+ router.post('/updateColumn', async (req, res) => {
+    const { id, name } = req.body;
+    let upd: Column;
+    try {
+        upd = await updateColumn({ id, name });
+        res.sendStatus(204);
+    } 
+    catch(err: any) { res.status(500).send(err.message);}
+ });
+
+ router.post('/moveColumn', async (req, res) => {
+    const data: TPropsMove = req.body;
+    try {   
+        const moved = await moveColumn(data);
+        res.sendStatus(204);
+    } catch(err: any){
+        res.status(500).send(err.message);
+    }
+ });
+
+ router.delete('/deleteColumn/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await deleteColumn({ id, isDelete: true, tx: null });
+        res.sendStatus(204);
+    } catch(err: any){
+        res.status(500).send(err.message);
+    }
  });
 
 export default router

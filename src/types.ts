@@ -6,20 +6,28 @@ export type Task_ = {
     list: string[],
     text: string | null
 };
-export type TPropsMoveTask = {
-    idAfterTask: string,
+export type TPropsMove = {
+    idAfter: string,
     idToMove: string,
-    idColumn: string,
-    isFirst: boolean
+    idParent: string,
 };
-export type TPropsDeleteTask = {
+export type TPropsDelete = {
     id: string,
     isDelete: boolean,
     tx: any
 };
 export type TPropsAddNewTask = {
-    columnId: string,
+    idParent: string,
+    name: string
+};
+export type TTaskItems = Task & { list: Item[] };
+
+export type TPropsAddNewColumn = {
+    idParent: string,
+    name: string
+};
+export type TPropsUpdateColumn = {
+    id: string,
     name: string
 };
 
-export type TTaskItems = Task & { list: Item[] };

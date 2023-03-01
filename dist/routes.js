@@ -14,10 +14,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const index_1 = require("./index");
+const crudColumn_1 = require("./utils/crudColumn");
 const crudTask_1 = require("./utils/crudTask");
 const itemsToArray_1 = require("./utils/itemsToArray");
 const sortedArrayFromLinkedList_1 = require("./utils/sortedArrayFromLinkedList");
 const router = express_1.default.Router();
+router.get('/groups', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let groups;
+    try {
+        groups = yield index_1.prisma.group.findMany();
+        res.json(groups);
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}));
 router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { groupId } = req.params;
     try {
@@ -41,31 +52,32 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
         res.json({ columns: output });
     }
-    catch (error) {
-        console.log('err=', error);
-        res.status(500).send(error);
+    catch (err) {
+        console.log('err=', err);
+        res.status(500).send(err.message);
     }
 }));
 router.post('/addTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { columnId, name } = req.body;
-    if (!columnId || !name)
+    const { idParent, name } = req.body;
+    if (!idParent || !name)
         res.sendStatus(500);
     try {
-        const newTask = yield (0, crudTask_1.addNewTask)({ columnId, name });
+        const newTask = yield (0, crudTask_1.addNewTask)({ idParent, name });
         res.json({ id: newTask.id });
     }
     catch (err) {
-        res.sendStatus(500);
+        res.status(500).send(err.message);
     }
 }));
 router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const task = req.body;
-    const updatedTask = yield (0, crudTask_1.updateTask)(task);
-    if (updatedTask) {
+    let upd;
+    try {
+        upd = yield (0, crudTask_1.updateTask)(task);
         res.sendStatus(204);
     }
-    else {
-        res.sendStatus(500);
+    catch (err) {
+        res.status(500).send(err.message);
     }
 }));
 router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -75,17 +87,60 @@ router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, functio
         res.sendStatus(204);
     }
     catch (err) {
-        res.sendStatus(500);
+        res.status(500).send(err.message);
     }
 }));
-router.delete('/deleteTask/:idTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { idTask } = req.params;
-    const id = yield (0, crudTask_1.deleteTask)({ id: idTask, isDelete: true, tx: null });
-    if (id) {
+router.delete('/deleteTask/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    try {
+        yield (0, crudTask_1.deleteTask)({ id, isDelete: true, tx: null });
         res.sendStatus(204);
     }
-    else {
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}));
+router.post('/addColumn', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { idParent, name } = req.body;
+    if (!idParent || !name)
         res.sendStatus(500);
+    try {
+        const newColumn = yield (0, crudColumn_1.addNewColumn)({ idParent, name });
+        res.json({ id: newColumn.id });
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}));
+router.post('/updateColumn', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, name } = req.body;
+    let upd;
+    try {
+        upd = yield (0, crudColumn_1.updateColumn)({ id, name });
+        res.sendStatus(204);
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}));
+router.post('/moveColumn', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = req.body;
+    try {
+        const moved = yield (0, crudColumn_1.moveColumn)(data);
+        res.sendStatus(204);
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+}));
+router.delete('/deleteColumn/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    try {
+        yield (0, crudColumn_1.deleteColumn)({ id, isDelete: true, tx: null });
+        res.sendStatus(204);
+    }
+    catch (err) {
+        res.status(500).send(err.message);
     }
 }));
 exports.default = router;

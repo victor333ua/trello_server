@@ -1,53 +1,53 @@
-import { Task } from '@prisma/client';
+import { Column } from '@prisma/client';
+import { TPropsAddNewColumn, TPropsUpdateColumn, TPropsDelete, TPropsMove } from '../types';
 import { prisma } from '../index';
-import { Task_, TPropsAddNewTask, TPropsDelete, TPropsMove } from '../types';
 import { sortedArrayFromLinkedList } from './sortedArrayFromLinkedList';
 
-export const addNewTask = async ({ idParent, name }: TPropsAddNewTask) => {
-    let column = null;
+export const addNewColumn = async ({ idParent, name }: TPropsAddNewColumn) => {
+    let group = null;
     try {
-        column = await prisma.column.findUnique({
+        group = await prisma.group.findUnique({
             where: {
                 id: idParent
             },
-            include: { tasks: true }
+            include: { columns: true }
         });
     } catch(err) {
-        throw Error("illegal columnId");
+        throw Error("illegal groupId");
     }
     let last = null;
-    if (column!.tasks && column!.tasks.length != 0) {
-        const sorted =  sortedArrayFromLinkedList<Task>(column!.tasks);
+    const columns = group!.columns;
+    if ( columns && columns.length != 0) {
+        const sorted =  sortedArrayFromLinkedList<Column>(columns);
         last = sorted[sorted.length - 1];
-    };
-    let newTask;
+    }
+    let newColumn;
     try {
-        newTask = await prisma.task.create({
+        newColumn = await prisma.column.create({
             data: {
-                columnId: idParent,
+                groupId: idParent,
                 name,
                 prevId: last ? last.id : null
             }
         });
     } catch(err) {
-        throw Error("can't create new task");
+        throw Error("can't create new column");
     }
-    return newTask;
+    return newColumn;
 };
-
-export const deleteTask = async ({ id, isDelete, tx }: TPropsDelete) => {
+export const deleteColumn = async ({ id, isDelete, tx }: TPropsDelete) => {
     if (!tx) tx = prisma;
     let toDelete, nextToDelete;
     try {
-        toDelete = await tx.task.findUnique({
+        toDelete = await tx.column.findUnique({
             where: { id }
         });
     } catch(err) {
         console.log(err);
-        throw new Error("task to delete not exist");
+        throw new Error("item to delete not exist");
     };
     try {
-        nextToDelete = await tx.task.updateMany({
+        nextToDelete = await tx.column.updateMany({
             where: { prevId: toDelete!.id },
             data: {
                 prevId: toDelete!.prevId
@@ -59,33 +59,33 @@ export const deleteTask = async ({ id, isDelete, tx }: TPropsDelete) => {
     };
     try {
         if (isDelete) {
-            toDelete = await tx.task.delete({
+            toDelete = await tx.column.delete({
                 where: { id }
             });
         } 
     } catch(err) {
-        throw new Error("can't delete task");
+        throw new Error("can't delete");
     }
     return toDelete;
 };
 
-export const moveTask = async (
+export const moveColumn = async (
     { idParent, idAfter, idToMove }: TPropsMove) => {
 
     await prisma.$transaction(async (tx) => {
         let toMove;
 // remove from old place
         try {
-            await deleteTask({ id: idToMove, isDelete: false, tx });
+            await deleteColumn({ id: idToMove, isDelete: false, tx });
         } catch(err) {
             throw Error("can't remove from old place");
         }
         try {
 // update next to insert, may be absent
-            const count = await tx.task.updateMany({
+            const count = await tx.column.updateMany({
                 where: {
                     AND: [
-                        { columnId: idParent }, // neccessary, if idAfter = null
+                        { groupId: idParent }, // neccessary, if idAfter = null
                         { prevId: idAfter }
                     ] 
                 },
@@ -100,10 +100,10 @@ export const moveTask = async (
             // }
         };      
         try {
-            toMove = await tx.task.update({
+            toMove = await tx.column.update({
                 where: { id: idToMove },
                 data: {
-                    columnId: idParent,
+                    groupId: idParent,
                     prevId: idAfter
                 }    
             });
@@ -113,27 +113,20 @@ export const moveTask = async (
         return toMove;
     });
 };
-export const updateTask = async (task: Task_) => {
-    const { id, name, text, list } = task;
-    const upd = await prisma.task.update({
-        where: { id },
-        data: {
-            name, text
-        }
-    });
-    const deleteItems = await prisma.item.deleteMany({
-        where: { taskId: id }
-    });
-    const addItems = await Promise.all(list.map(async (item) => {
-        await prisma.item.create({
+
+export const updateColumn = async ({ id, name }: TPropsUpdateColumn) => {
+    let upd: Column;
+    try {
+        upd = await prisma.column.update({
+            where: { id },
             data: {
-                text: item,
-                taskId: id
+                name
             }
         });
-    }));
-    return prisma.task.findUnique({
-        where: { id },
-        include: { list: true }
-    });
+    } catch(err) {
+        throw Error("can't update column");
+    }
+    return upd;
 };
+
+

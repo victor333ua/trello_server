@@ -9,60 +9,60 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateTask = exports.moveTask = exports.deleteTask = exports.addNewTask = void 0;
+exports.updateColumn = exports.moveColumn = exports.deleteColumn = exports.addNewColumn = void 0;
 const index_1 = require("../index");
 const sortedArrayFromLinkedList_1 = require("./sortedArrayFromLinkedList");
-const addNewTask = ({ idParent, name }) => __awaiter(void 0, void 0, void 0, function* () {
-    let column = null;
+const addNewColumn = ({ idParent, name }) => __awaiter(void 0, void 0, void 0, function* () {
+    let group = null;
     try {
-        column = yield index_1.prisma.column.findUnique({
+        group = yield index_1.prisma.group.findUnique({
             where: {
                 id: idParent
             },
-            include: { tasks: true }
+            include: { columns: true }
         });
     }
     catch (err) {
-        throw Error("illegal columnId");
+        throw Error("illegal groupId");
     }
     let last = null;
-    if (column.tasks && column.tasks.length != 0) {
-        const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
+    const columns = group.columns;
+    if (columns && columns.length != 0) {
+        const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(columns);
         last = sorted[sorted.length - 1];
     }
-    ;
-    let newTask;
+    let newColumn;
     try {
-        newTask = yield index_1.prisma.task.create({
+        newColumn = yield index_1.prisma.column.create({
             data: {
-                columnId: idParent,
+                groupId: idParent,
                 name,
                 prevId: last ? last.id : null
             }
         });
     }
     catch (err) {
-        throw Error("can't create new task");
+        throw Error("can't create new column");
     }
-    return newTask;
+    return newColumn;
 });
-exports.addNewTask = addNewTask;
-const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, function* () {
+exports.addNewColumn = addNewColumn;
+const deleteColumn = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, function* () {
     if (!tx)
         tx = index_1.prisma;
     let toDelete, nextToDelete;
     try {
-        toDelete = yield tx.task.findUnique({
+        toDelete = yield tx.column.findUnique({
             where: { id }
         });
     }
     catch (err) {
         console.log(err);
-        throw new Error("task to delete not exist");
+        throw new Error("item to delete not exist");
     }
     ;
     try {
-        nextToDelete = yield tx.task.updateMany({
+        nextToDelete = yield tx.column.updateMany({
             where: { prevId: toDelete.id },
             data: {
                 prevId: toDelete.prevId
@@ -76,31 +76,31 @@ const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, f
     ;
     try {
         if (isDelete) {
-            toDelete = yield tx.task.delete({
+            toDelete = yield tx.column.delete({
                 where: { id }
             });
         }
     }
     catch (err) {
-        throw new Error("can't delete task");
+        throw new Error("can't delete");
     }
     return toDelete;
 });
-exports.deleteTask = deleteTask;
-const moveTask = ({ idParent, idAfter, idToMove }) => __awaiter(void 0, void 0, void 0, function* () {
+exports.deleteColumn = deleteColumn;
+const moveColumn = ({ idParent, idAfter, idToMove }) => __awaiter(void 0, void 0, void 0, function* () {
     yield index_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         let toMove;
         try {
-            yield (0, exports.deleteTask)({ id: idToMove, isDelete: false, tx });
+            yield (0, exports.deleteColumn)({ id: idToMove, isDelete: false, tx });
         }
         catch (err) {
             throw Error("can't remove from old place");
         }
         try {
-            const count = yield tx.task.updateMany({
+            const count = yield tx.column.updateMany({
                 where: {
                     AND: [
-                        { columnId: idParent },
+                        { groupId: idParent },
                         { prevId: idAfter }
                     ]
                 },
@@ -114,10 +114,10 @@ const moveTask = ({ idParent, idAfter, idToMove }) => __awaiter(void 0, void 0, 
         }
         ;
         try {
-            toMove = yield tx.task.update({
+            toMove = yield tx.column.update({
                 where: { id: idToMove },
                 data: {
-                    columnId: idParent,
+                    groupId: idParent,
                     prevId: idAfter
                 }
             });
@@ -128,30 +128,21 @@ const moveTask = ({ idParent, idAfter, idToMove }) => __awaiter(void 0, void 0, 
         return toMove;
     }));
 });
-exports.moveTask = moveTask;
-const updateTask = (task) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id, name, text, list } = task;
-    const upd = yield index_1.prisma.task.update({
-        where: { id },
-        data: {
-            name, text
-        }
-    });
-    const deleteItems = yield index_1.prisma.item.deleteMany({
-        where: { taskId: id }
-    });
-    const addItems = yield Promise.all(list.map((item) => __awaiter(void 0, void 0, void 0, function* () {
-        yield index_1.prisma.item.create({
+exports.moveColumn = moveColumn;
+const updateColumn = ({ id, name }) => __awaiter(void 0, void 0, void 0, function* () {
+    let upd;
+    try {
+        upd = yield index_1.prisma.column.update({
+            where: { id },
             data: {
-                text: item,
-                taskId: id
+                name
             }
         });
-    })));
-    return index_1.prisma.task.findUnique({
-        where: { id },
-        include: { list: true }
-    });
+    }
+    catch (err) {
+        throw Error("can't update column");
+    }
+    return upd;
 });
-exports.updateTask = updateTask;
-//# sourceMappingURL=crudTask.js.map
+exports.updateColumn = updateColumn;
+//# sourceMappingURL=crudColumn.js.map

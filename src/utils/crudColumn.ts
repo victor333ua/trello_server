@@ -37,24 +37,22 @@ export const addNewColumn = async ({ idParent, name }: TPropsAddNewColumn) => {
 };
 export const deleteColumn = async ({ id, isDelete, tx }: TPropsDelete) => {
     if (!tx) tx = prisma;
-    let toDelete, nextToDelete;
+    let toDelete, count;
     try {
         toDelete = await tx.column.findUnique({
             where: { id }
         });
     } catch(err) {
-        console.log(err);
         throw new Error("item to delete not exist");
     };
     try {
-        nextToDelete = await tx.column.updateMany({
+        count = await tx.column.updateMany({
             where: { prevId: toDelete!.id },
             data: {
                 prevId: toDelete!.prevId
             }
         });
     } catch(err) {
-        console.log(err);
         throw Error("can't update next to delete");
     };
     try {

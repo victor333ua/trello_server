@@ -31,7 +31,7 @@ model Column {
     prevColumn Column?  @relation("llColumn", fields: [prevId], references: [id], onDelete: NoAction, onUpdate: NoAction)
     nextColumns Column[]  @relation("llColumn")
     groupId String
-    group Group @relation(fields: [groupId], references:[id])   
+    group Group @relation(fields: [groupId], references:[id], onDelete: Cascade)   
     tasks Task[]
 }
 
@@ -42,7 +42,7 @@ model Task {
     prevTask Task?  @relation("linkedList", fields: [prevId], references: [id], onDelete: NoAction, onUpdate: NoAction)
     nextTasks Task[]  @relation("linkedList")
     columnId String
-    column Column @relation(fields: [columnId], references:[id])   
+    column Column @relation(fields: [columnId], references:[id], onDelete: Cascade)   
     list Item[]
     text String?
 }
@@ -51,7 +51,7 @@ model Item {
    id String @id @default(uuid())
    text String
    taskId String
-   task Task @relation(fields: [taskId], references:[id])    
+   task Task @relation(fields: [taskId], references:[id], onDelete: Cascade)    
 }
 
 model FederatedCredential {

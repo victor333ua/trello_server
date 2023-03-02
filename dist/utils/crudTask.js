@@ -50,19 +50,18 @@ exports.addNewTask = addNewTask;
 const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, function* () {
     if (!tx)
         tx = index_1.prisma;
-    let toDelete, nextToDelete;
+    let toDelete, count;
     try {
         toDelete = yield tx.task.findUnique({
             where: { id }
         });
     }
     catch (err) {
-        console.log(err);
         throw new Error("task to delete not exist");
     }
     ;
     try {
-        nextToDelete = yield tx.task.updateMany({
+        count = yield tx.task.updateMany({
             where: { prevId: toDelete.id },
             data: {
                 prevId: toDelete.prevId
@@ -70,7 +69,6 @@ const deleteTask = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, f
         });
     }
     catch (err) {
-        console.log(err);
         throw Error("can't update next to delete");
     }
     ;

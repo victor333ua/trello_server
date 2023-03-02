@@ -37,24 +37,22 @@ export const addNewTask = async ({ idParent, name }: TPropsAddNewTask) => {
 
 export const deleteTask = async ({ id, isDelete, tx }: TPropsDelete) => {
     if (!tx) tx = prisma;
-    let toDelete, nextToDelete;
+    let toDelete, count;
     try {
         toDelete = await tx.task.findUnique({
             where: { id }
         });
     } catch(err) {
-        console.log(err);
         throw new Error("task to delete not exist");
     };
     try {
-        nextToDelete = await tx.task.updateMany({
+        count = await tx.task.updateMany({
             where: { prevId: toDelete!.id },
             data: {
                 prevId: toDelete!.prevId
             }
         });
     } catch(err) {
-        console.log(err);
         throw Error("can't update next to delete");
     };
     try {

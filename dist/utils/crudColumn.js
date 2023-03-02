@@ -50,19 +50,18 @@ exports.addNewColumn = addNewColumn;
 const deleteColumn = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0, function* () {
     if (!tx)
         tx = index_1.prisma;
-    let toDelete, nextToDelete;
+    let toDelete, count;
     try {
         toDelete = yield tx.column.findUnique({
             where: { id }
         });
     }
     catch (err) {
-        console.log(err);
         throw new Error("item to delete not exist");
     }
     ;
     try {
-        nextToDelete = yield tx.column.updateMany({
+        count = yield tx.column.updateMany({
             where: { prevId: toDelete.id },
             data: {
                 prevId: toDelete.prevId
@@ -70,7 +69,6 @@ const deleteColumn = ({ id, isDelete, tx }) => __awaiter(void 0, void 0, void 0,
         });
     }
     catch (err) {
-        console.log(err);
         throw Error("can't update next to delete");
     }
     ;

@@ -1,8 +1,11 @@
 import { Prisma } from '@prisma/client';
 import { TPropsDelete, TPropsMove } from '../types';
 import { prisma } from '../index';
+import { DropArgument } from 'net';
+import { LinkedList, sortedArrayFromLinkedList } from './sortedArrayFromLinkedList';
 
 type TModelName = Uncapitalize<Prisma.ModelName>;
+type TModel = { name: TModelName, parentIdName: string };
 // tableName.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
 export const deleteItem = async ({ id, isDelete, tx }: TPropsDelete, model: TModelName) => {
@@ -38,23 +41,23 @@ export const deleteItem = async ({ id, isDelete, tx }: TPropsDelete, model: TMod
 };
 
 export const moveItem = async (
-    { idParent, idAfter, idToMove }: TPropsMove, model: TModelName) => {
+    { idParent, idAfter, idToMove }: TPropsMove, model: TModel) => {
 
     await prisma.$transaction(async (tx) => {
         let toMove;
 // remove from old place
         try {
-            await deleteItem({ id: idToMove, isDelete: false, tx }, model);
+            await deleteItem({ id: idToMove, isDelete: false, tx }, model.name);
         } catch(err) {
             throw Error("can't remove from old place");
         }
         try {
 // update next to insert, may be absent
 // @ts-ignore
-            const count = await tx[model].updateMany({
+            const count = await tx[model.name].updateMany({
                 where: {
                     AND: [
-                        { groupId: idParent }, // neccessary, if idAfter = null
+                        { [model.parentIdName]: idParent }, // neccessary, if idAfter = null
                         { prevId: idAfter }
                     ] 
                 },
@@ -70,10 +73,10 @@ export const moveItem = async (
         };      
         try {
 // @ts-ignore
-            toMove = await tx[model].update({
+            toMove = await tx[model.name].update({
                 where: { id: idToMove },
                 data: {
-                    groupId: idParent,
+                    [model.parentIdName]: idParent,
                     prevId: idAfter
                 }    
             });
@@ -83,3 +86,29 @@ export const moveItem = async (
         return toMove;
     });
 };
+type TParentChild = { 
+    parentModel: TModelName, 
+    childListName: string,
+    idParent: string
+};
+export const findLastElement = async <ChildType extends LinkedList>(arg: TParentChild): Promise<ChildType | null> => {
+    let parent = null;
+    try {
+        // @ts-ignore
+        parent = await prisma[arg.parentModel].findUnique({
+            where: {
+                id: arg.idParent
+            },
+            include: { [arg.childListName]: true }
+        });
+    } catch(err) {
+        throw Error("findLastElement: can't find parent");
+    }
+    let last = null;
+    const list = parent![arg.childListName];
+    if ( list && list.length != 0) {
+        const sorted =  sortedArrayFromLinkedList<ChildType>(list);
+        last = sorted[sorted.length - 1];
+    };
+    return last;
+}

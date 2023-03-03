@@ -3,7 +3,7 @@ import express from 'express'
 import { prisma } from './index';
 import { Task_, TPropsMove, TTaskItems } from './types';
 import { addNewColumn, deleteColumn, moveColumn, updateColumn } from './utils/crudColumn';
-import { deleteItem } from './utils/crudLinkedList';
+import { deleteItem, moveItem } from './utils/crudLinkedList';
 import { addNewTask, deleteTask, moveTask, updateTask } from './utils/crudTask';
 import { itemsToArray } from './utils/itemsToArray';
 import { sortedArrayFromLinkedList } from './utils/sortedArrayFromLinkedList';
@@ -73,7 +73,7 @@ router.get('/feed/:groupId', async (req, res) => {
  router.post('/moveTask', async (req, res) => {
     const data: TPropsMove = req.body;
     try {   
-        const movedTask = await moveTask(data);
+        const movedTask = await moveItem(data, {name: 'task', parentIdName: 'columnId'});
         res.sendStatus(204);
     } catch(err: any) {
         res.status(500).send(err.message);
@@ -115,7 +115,7 @@ router.get('/feed/:groupId', async (req, res) => {
  router.post('/moveColumn', async (req, res) => {
     const data: TPropsMove = req.body;
     try {   
-        const moved = await moveColumn(data);
+        const moved = await moveItem(data, {name: 'column', parentIdName: 'groupId'});
         res.sendStatus(204);
     } catch(err: any){
         res.status(500).send(err.message);
@@ -125,7 +125,7 @@ router.get('/feed/:groupId', async (req, res) => {
  router.delete('/deleteColumn/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await deleteColumn({ id, isDelete: true, tx: null });
+        await deleteItem({ id, isDelete: true, tx: null }, 'column');
         res.sendStatus(204);
     } catch(err: any){
         res.status(500).send(err.message);

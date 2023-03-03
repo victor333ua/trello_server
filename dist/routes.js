@@ -84,7 +84,7 @@ router.post('/updateTask', (req, res) => __awaiter(void 0, void 0, void 0, funct
 router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     try {
-        const movedTask = yield (0, crudTask_1.moveTask)(data);
+        const movedTask = yield (0, crudLinkedList_1.moveItem)(data, { name: 'task', parentIdName: 'columnId' });
         res.sendStatus(204);
     }
     catch (err) {
@@ -127,7 +127,7 @@ router.post('/updateColumn', (req, res) => __awaiter(void 0, void 0, void 0, fun
 router.post('/moveColumn', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.body;
     try {
-        const moved = yield (0, crudColumn_1.moveColumn)(data);
+        const moved = yield (0, crudLinkedList_1.moveItem)(data, { name: 'column', parentIdName: 'groupId' });
         res.sendStatus(204);
     }
     catch (err) {
@@ -137,7 +137,7 @@ router.post('/moveColumn', (req, res) => __awaiter(void 0, void 0, void 0, funct
 router.delete('/deleteColumn/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
-        yield (0, crudColumn_1.deleteColumn)({ id, isDelete: true, tx: null });
+        yield (0, crudLinkedList_1.deleteItem)({ id, isDelete: true, tx: null }, 'column');
         res.sendStatus(204);
     }
     catch (err) {

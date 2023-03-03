@@ -1,4 +1,4 @@
-interface LinkedList {
+export type LinkedList = {
     id: string,
     prevId: string | null
 }

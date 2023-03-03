@@ -9,8 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveItem = exports.deleteItem = void 0;
+exports.findLastElement = exports.moveItem = exports.deleteItem = void 0;
 const index_1 = require("../index");
+const sortedArrayFromLinkedList_1 = require("./sortedArrayFromLinkedList");
 const deleteItem = ({ id, isDelete, tx }, model) => __awaiter(void 0, void 0, void 0, function* () {
     if (!tx)
         tx = index_1.prisma;
@@ -53,16 +54,16 @@ const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, v
     yield index_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         let toMove;
         try {
-            yield (0, exports.deleteItem)({ id: idToMove, isDelete: false, tx }, model);
+            yield (0, exports.deleteItem)({ id: idToMove, isDelete: false, tx }, model.name);
         }
         catch (err) {
             throw Error("can't remove from old place");
         }
         try {
-            const count = yield tx[model].updateMany({
+            const count = yield tx[model.name].updateMany({
                 where: {
                     AND: [
-                        { groupId: idParent },
+                        { [model.parentIdName]: idParent },
                         { prevId: idAfter }
                     ]
                 },
@@ -76,10 +77,10 @@ const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, v
         }
         ;
         try {
-            toMove = yield tx[model].update({
+            toMove = yield tx[model.name].update({
                 where: { id: idToMove },
                 data: {
-                    groupId: idParent,
+                    [model.parentIdName]: idParent,
                     prevId: idAfter
                 }
             });
@@ -91,4 +92,27 @@ const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, v
     }));
 });
 exports.moveItem = moveItem;
+const findLastElement = (arg) => __awaiter(void 0, void 0, void 0, function* () {
+    let parent = null;
+    try {
+        parent = yield index_1.prisma[arg.parentModel].findUnique({
+            where: {
+                id: arg.idParent
+            },
+            include: { [arg.childListName]: true }
+        });
+    }
+    catch (err) {
+        throw Error("findLastElement: can't find parent");
+    }
+    let last = null;
+    const list = parent[arg.childListName];
+    if (list && list.length != 0) {
+        const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(list);
+        last = sorted[sorted.length - 1];
+    }
+    ;
+    return last;
+});
+exports.findLastElement = findLastElement;
 //# sourceMappingURL=crudLinkedList.js.map

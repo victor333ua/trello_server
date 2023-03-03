@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const index_1 = require("./index");
 const crudColumn_1 = require("./utils/crudColumn");
+const crudLinkedList_1 = require("./utils/crudLinkedList");
 const crudTask_1 = require("./utils/crudTask");
 const itemsToArray_1 = require("./utils/itemsToArray");
 const sortedArrayFromLinkedList_1 = require("./utils/sortedArrayFromLinkedList");
@@ -93,7 +94,7 @@ router.post('/moveTask', (req, res) => __awaiter(void 0, void 0, void 0, functio
 router.delete('/deleteTask/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
-        yield (0, crudTask_1.deleteTask)({ id, isDelete: true, tx: null });
+        yield (0, crudLinkedList_1.deleteItem)({ id, isDelete: true, tx: null }, 'task');
         res.sendStatus(204);
     }
     catch (err) {

@@ -3,6 +3,7 @@ import express from 'express'
 import { prisma } from './index';
 import { Task_, TPropsMove, TTaskItems } from './types';
 import { addNewColumn, deleteColumn, moveColumn, updateColumn } from './utils/crudColumn';
+import { deleteItem } from './utils/crudLinkedList';
 import { addNewTask, deleteTask, moveTask, updateTask } from './utils/crudTask';
 import { itemsToArray } from './utils/itemsToArray';
 import { sortedArrayFromLinkedList } from './utils/sortedArrayFromLinkedList';
@@ -82,7 +83,7 @@ router.get('/feed/:groupId', async (req, res) => {
  router.delete('/deleteTask/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await deleteTask({ id, isDelete: true, tx: null });
+        await deleteItem({ id, isDelete: true, tx: null }, 'task');
         res.sendStatus(204);
     } catch(err: any) {
         res.status(500).send(err.message);

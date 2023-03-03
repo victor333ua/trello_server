@@ -50,6 +50,7 @@ export const moveItem = async (
         }
         try {
 // update next to insert, may be absent
+// @ts-ignore
             const count = await tx[model].updateMany({
                 where: {
                     AND: [
@@ -68,6 +69,7 @@ export const moveItem = async (
             // }
         };      
         try {
+// @ts-ignore
             toMove = await tx[model].update({
                 where: { id: idToMove },
                 data: {

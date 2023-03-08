@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { TPropsDelete, TPropsMove } from '../types';
 import { prisma } from '../index';
-import { DropArgument } from 'net';
 import { LinkedList, sortedArrayFromLinkedList } from './sortedArrayFromLinkedList';
 
 type TModelName = Uncapitalize<Prisma.ModelName>;
@@ -91,7 +90,8 @@ type TParentChild = {
     childListName: string,
     idParent: string
 };
-export const findLastElement = async <ChildType extends LinkedList>(arg: TParentChild): Promise<ChildType | null> => {
+export const findLastElement = 
+    async <ChildType extends LinkedList>(arg: TParentChild): Promise<ChildType | null> => {
     let parent = null;
     try {
         // @ts-ignore

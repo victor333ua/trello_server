@@ -2,9 +2,9 @@ import { Column } from '@prisma/client';
 import express from 'express'
 import { prisma } from './index';
 import { Task_, TPropsMove, TTaskItems } from './types';
-import { addNewColumn, deleteColumn, moveColumn, updateColumn } from './utils/crudColumn';
+import { addNewColumn, updateColumn } from './utils/crudColumn';
 import { deleteItem, moveItem } from './utils/crudLinkedList';
-import { addNewTask, deleteTask, moveTask, updateTask } from './utils/crudTask';
+import { addNewTask, updateTask } from './utils/crudTask';
 import { itemsToArray } from './utils/itemsToArray';
 import { sortedArrayFromLinkedList } from './utils/sortedArrayFromLinkedList';
 
@@ -43,7 +43,18 @@ router.get('/feed/:groupId', async (req, res) => {
         });      
         res.json({columns: output});
     } catch(err: any){
-        console.log('err=', err);
+        res.status(500).send(err.message);
+    }
+});
+
+router.post('/addGroup', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const newGroup = await prisma.group.create({
+            data: { name }
+        });
+        res.json({id: newGroup.id});
+    } catch(err: any) {
         res.status(500).send(err.message);
     }
 });

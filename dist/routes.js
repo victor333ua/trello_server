@@ -54,7 +54,18 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
         res.json({ columns: output });
     }
     catch (err) {
-        console.log('err=', err);
+        res.status(500).send(err.message);
+    }
+}));
+router.post('/addGroup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name } = req.body;
+    try {
+        const newGroup = yield index_1.prisma.group.create({
+            data: { name }
+        });
+        res.json({ id: newGroup.id });
+    }
+    catch (err) {
         res.status(500).send(err.message);
     }
 }));

@@ -43,7 +43,7 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
                 }
             }
         });
-        const output = columns.map(column => {
+        let output = columns.map(column => {
             let tasks_ = Array();
             if (column.tasks && column.tasks.length != 0) {
                 const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
@@ -51,6 +51,7 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
             }
             return (Object.assign(Object.assign({}, column), { tasks: tasks_ }));
         });
+        output = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(output);
         res.json({ columns: output });
     }
     catch (err) {

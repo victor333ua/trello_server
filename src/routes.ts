@@ -33,14 +33,15 @@ router.get('/feed/:groupId', async (req, res) => {
                 }
             }
         }); 
-        const output = columns.map(column => {
+        let output = columns.map(column => {
             let tasks_ = Array<Task_>();
             if (column.tasks && column.tasks.length != 0) {
                 const sorted =  sortedArrayFromLinkedList<TTaskItems>(column.tasks);
                 tasks_ = sorted!.map(task => itemsToArray(task));
             }
             return ({...column, tasks: tasks_});
-        });      
+        });
+        output =  sortedArrayFromLinkedList<Column & {tasks: Task_[]}>(output);      
         res.json({columns: output});
     } catch(err: any){
         res.status(500).send(err.message);

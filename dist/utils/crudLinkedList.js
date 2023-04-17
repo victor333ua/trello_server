@@ -51,10 +51,11 @@ const deleteItem = ({ id, isDelete, tx }, model) => __awaiter(void 0, void 0, vo
 });
 exports.deleteItem = deleteItem;
 const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name, parentIdName } = model;
     yield index_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         let toMove;
         try {
-            yield (0, exports.deleteItem)({ id: idToMove, isDelete: false, tx }, model.name);
+            yield (0, exports.deleteItem)({ id: idToMove, isDelete: false, tx }, name);
         }
         catch (err) {
             throw Error("can't remove from old place");
@@ -63,7 +64,7 @@ const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, v
             const count = yield tx[model.name].updateMany({
                 where: {
                     AND: [
-                        { [model.parentIdName]: idParent },
+                        { [parentIdName]: idParent },
                         { prevId: idAfter }
                     ]
                 },
@@ -77,10 +78,10 @@ const moveItem = ({ idParent, idAfter, idToMove }, model) => __awaiter(void 0, v
         }
         ;
         try {
-            toMove = yield tx[model.name].update({
+            toMove = yield tx[name].update({
                 where: { id: idToMove },
                 data: {
-                    [model.parentIdName]: idParent,
+                    [parentIdName]: idParent,
                     prevId: idAfter
                 }
             });

@@ -42,11 +42,13 @@ export const deleteItem = async ({ id, isDelete, tx }: TPropsDelete, model: TMod
 export const moveItem = async (
     { idParent, idAfter, idToMove }: TPropsMove, model: TModel) => {
 
+    const { name, parentIdName } = model;
+
     await prisma.$transaction(async (tx) => {
         let toMove;
 // remove from old place
         try {
-            await deleteItem({ id: idToMove, isDelete: false, tx }, model.name);
+            await deleteItem({ id: idToMove, isDelete: false, tx }, name);
         } catch(err) {
             throw Error("can't remove from old place");
         }
@@ -56,7 +58,7 @@ export const moveItem = async (
             const count = await tx[model.name].updateMany({
                 where: {
                     AND: [
-                        { [model.parentIdName]: idParent }, // neccessary, if idAfter = null
+                        { [parentIdName]: idParent }, // neccessary, if idAfter = null
                         { prevId: idAfter }
                     ] 
                 },
@@ -72,10 +74,10 @@ export const moveItem = async (
         };      
         try {
 // @ts-ignore
-            toMove = await tx[model.name].update({
+            toMove = await tx[name].update({
                 where: { id: idToMove },
                 data: {
-                    [model.parentIdName]: idParent,
+                    [parentIdName]: idParent,
                     prevId: idAfter
                 }    
             });

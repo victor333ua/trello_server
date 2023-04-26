@@ -21,6 +21,27 @@ const crudTask_1 = require("../utils/crudTask");
 const itemsToArray_1 = require("../utils/itemsToArray");
 const sortedArrayFromLinkedList_1 = require("../utils/sortedArrayFromLinkedList");
 const router = express_1.default.Router();
+router.get('/user', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.cookies[constants_1.COOKIE_NAME];
+    if (!userId) {
+        res.status(401).send();
+        return;
+    }
+    try {
+        let user = yield index_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                name: true
+            }
+        });
+        res.json(user);
+    }
+    catch (err) {
+        res.status(400).send(err.message);
+    }
+}));
 router.get('/groups', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let groups;
     const userId = req.cookies[constants_1.COOKIE_NAME];
@@ -41,7 +62,7 @@ router.get('/groups', (req, res) => __awaiter(void 0, void 0, void 0, function* 
 router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { groupId } = req.params;
     try {
-        let columns = yield index_1.prisma.column.findMany({
+        let cols = yield index_1.prisma.column.findMany({
             where: { groupId },
             include: {
                 tasks: {
@@ -51,26 +72,35 @@ router.get('/feed/:groupId', (req, res) => __awaiter(void 0, void 0, void 0, fun
                 }
             }
         });
-        let output = columns.map(column => {
+        if (cols.length == 0) {
+            res.json({ columns: [] }).send();
+            return;
+        }
+        let output = cols.map(column => {
             let tasks_ = Array();
             if (column.tasks && column.tasks.length != 0) {
                 const sorted = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(column.tasks);
                 tasks_ = sorted.map(task => (0, itemsToArray_1.itemsToArray)(task));
             }
+            ;
             return (Object.assign(Object.assign({}, column), { tasks: tasks_ }));
         });
         output = (0, sortedArrayFromLinkedList_1.sortedArrayFromLinkedList)(output);
-        res.json({ columns: output });
+        const columns = output.map(column => {
+            const { id, name, groupId, tasks } = column;
+            return ({ id, name, groupId, tasks });
+        });
+        res.json({ columns });
     }
     catch (err) {
         res.status(500).send(err.message);
     }
 }));
 router.post('/addGroup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name } = req.body;
+    const { name, userId } = req.body;
     try {
         const newGroup = yield index_1.prisma.group.create({
-            data: { name }
+            data: { name, userId }
         });
         res.json({ id: newGroup.id });
     }
@@ -80,8 +110,10 @@ router.post('/addGroup', (req, res) => __awaiter(void 0, void 0, void 0, functio
 }));
 router.post('/addTask', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { idParent, name } = req.body;
-    if (!idParent || !name)
+    if (!idParent || !name) {
         res.sendStatus(500);
+        return;
+    }
     try {
         const newTask = yield (0, crudTask_1.addNewTask)({ idParent, name });
         res.json({ id: newTask.id });
@@ -123,8 +155,10 @@ router.delete('/deleteTask/:id', (req, res) => __awaiter(void 0, void 0, void 0,
 }));
 router.post('/addColumn', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { idParent, name } = req.body;
-    if (!idParent || !name)
+    if (!idParent || !name) {
         res.sendStatus(500);
+        return;
+    }
     try {
         const newColumn = yield (0, crudColumn_1.addNewColumn)({ idParent, name });
         res.json({ id: newColumn.id });

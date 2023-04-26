@@ -17,12 +17,6 @@ const index_1 = require("../index");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const constants_1 = require("../constants");
 const authRouter = express_1.default.Router();
-const cookieAttr = {
-    httpOnly: constants_1.__prod__,
-    sameSite: constants_1.__prod__ ? 'none' : 'lax',
-    secure: constants_1.__prod__,
-    maxAge: 1000 * 60 * 60 * 24 * 365,
-};
 authRouter.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     try {
@@ -35,7 +29,8 @@ authRouter.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, fun
         user = yield index_1.prisma.user.create({
             data: { email, password: cryptPassword }
         });
-        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, cookieAttr).json({ user });
+        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, constants_1.cookieAttr)
+            .json({ user: { id: user.id, email: user.email } });
     }
     catch (err) {
         res.status(400).send(err.message);
@@ -54,7 +49,8 @@ authRouter.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, functi
         const isCompare = yield bcrypt_1.default.compare(password, user.password);
         if (!isCompare)
             throw new Error(JSON.stringify({ password: 'invalid password' }));
-        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, cookieAttr).json({ user });
+        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, constants_1.cookieAttr)
+            .json({ user: { id: user.id, email: user.email, name: user.name } });
     }
     catch (err) {
         res.status(400).send(err.message);

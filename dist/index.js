@@ -7,10 +7,13 @@ exports.prisma = void 0;
 const express_1 = __importDefault(require("express"));
 const client_1 = require("@prisma/client");
 const cors_1 = __importDefault(require("cors"));
-const route_1 = __importDefault(require("./routes/route"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const route_1 = __importDefault(require("./routes/route"));
 const authRoute_1 = __importDefault(require("./routes/authRoute"));
+const oauth2Route_1 = __importDefault(require("./routes/oauth2Route"));
+const passport_1 = __importDefault(require("passport"));
+require("./passport");
 exports.prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
 app.use(body_parser_1.default.json());
@@ -22,8 +25,10 @@ const corsOptions = {
     credentials: true,
 };
 app.use((0, cors_1.default)(corsOptions));
+app.use(passport_1.default.initialize());
 app.use('/', route_1.default);
 app.use('/auth', authRoute_1.default);
+app.use('/', oauth2Route_1.default);
 const port = 4000;
 const server = app.listen(port, () => {
     console.log(`listening on port ${port}`);

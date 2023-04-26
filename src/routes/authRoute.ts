@@ -1,16 +1,9 @@
-import express, { CookieOptions } from "express";
+import express from "express";
 import { prisma } from "../index";
 import bcrypt from 'bcrypt';
-import { COOKIE_NAME, __prod__ } from "../constants";
+import { cookieAttr, COOKIE_NAME, __prod__ } from "../constants";
 
 const authRouter = express.Router();
-
-const cookieAttr: CookieOptions = {
-    httpOnly: __prod__,  
-    sameSite: __prod__ ? 'none' : 'lax',  
-    secure: __prod__,
-    maxAge: 1000 * 60 * 60 * 24 * 365,
-}
 
 authRouter.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -26,7 +19,8 @@ authRouter.post('/register', async (req, res) => {
             data: { email, password: cryptPassword }
         });
 
-        res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr).json({user});
+        res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr)
+           .json({ user: { id: user.id, email: user.email }});
     } catch(err: any){
         res.status(400).send(err.message);
     }
@@ -48,7 +42,8 @@ authRouter.post('/login', async (req, res) => {
         if (!isCompare)  throw new Error(JSON.stringify(
             {password:'invalid password'}));
 
-        res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr).json({user});
+        res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr)
+        .json({ user: { id: user.id, email: user.email, name: user.name }});
     } catch(err: any){
         res.status(400).send(err.message);
     }
@@ -56,5 +51,6 @@ authRouter.post('/login', async (req, res) => {
 
 authRouter.get('/logout', async (req, res) => {
     res.clearCookie(COOKIE_NAME);
-})
+});
+
 export default  authRouter;

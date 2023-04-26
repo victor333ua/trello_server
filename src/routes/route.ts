@@ -11,15 +11,34 @@ import { sortedArrayFromLinkedList } from '../utils/sortedArrayFromLinkedList';
 
 const router = express.Router();
 
-router.get('/groups', async (req, res) => {
-    let groups;
-
+router.get('/user', async (req, res) => {
     const userId = req.cookies[COOKIE_NAME];
     if (!userId) {
         res.status(401).send(); 
         return;
     }
+    try {
+        let user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                name: true
+            }
+        });
+        res.json(user);
+    } catch(err: any){
+        res.status(400).send(err.message);
+    }
+});
 
+router.get('/groups', async (req, res) => {
+    let groups;
+    const userId = req.cookies[COOKIE_NAME];
+    if (!userId) {
+        res.status(401).send(); 
+        return;
+    }
     try {
         groups = await prisma.group.findMany({
             where: { userId }
@@ -33,7 +52,7 @@ router.get('/groups', async (req, res) => {
 router.get('/feed/:groupId', async (req, res) => {
     const { groupId } = req.params;
     try {
-        let columns = await prisma.column.findMany({
+        let cols = await prisma.column.findMany({
             where: { groupId },
             include: {
                 tasks: {
@@ -43,26 +62,31 @@ router.get('/feed/:groupId', async (req, res) => {
                 }
             }
         }); 
-        let output = columns.map(column => {
+        if (cols.length == 0) { res.json({columns: []}).send(); return; }
+        let output = cols.map(column => {
             let tasks_ = Array<Task_>();
             if (column.tasks && column.tasks.length != 0) {
                 const sorted =  sortedArrayFromLinkedList<TTaskItems>(column.tasks);
                 tasks_ = sorted!.map(task => itemsToArray(task));
-            }
-            return ({...column, tasks: tasks_});
+            };
+            return ({ ...column, tasks: tasks_});
         });
-        output =  sortedArrayFromLinkedList<Column & {tasks: Task_[]}>(output);      
-        res.json({columns: output});
+        output =  sortedArrayFromLinkedList<Column & {tasks: Task_[]}>(output);
+        const columns = output.map(column => {
+            const { id, name, groupId, tasks } = column;
+            return ({ id, name, groupId, tasks });
+        })      
+        res.json({columns});
     } catch(err: any){
         res.status(500).send(err.message);
     }
 });
 
 router.post('/addGroup', async (req, res) => {
-    const { name } = req.body;
+    const { name, userId } = req.body;
     try {
         const newGroup = await prisma.group.create({
-            data: { name }
+            data: { name, userId }
         });
         res.json({id: newGroup.id});
     } catch(err: any) {
@@ -72,7 +96,7 @@ router.post('/addGroup', async (req, res) => {
 
  router.post('/addTask', async (req, res) => {
     const { idParent, name } = req.body;
-    if (!idParent || !name) res.sendStatus(500);
+    if (!idParent || !name) { res.sendStatus(500); return; }
     try {
         const newTask = await addNewTask({ idParent, name });
         res.json({id: newTask.id});
@@ -115,7 +139,7 @@ router.post('/addGroup', async (req, res) => {
 // columns
  router.post('/addColumn', async (req, res) => {
     const { idParent, name } = req.body;
-    if (!idParent || !name) res.sendStatus(500);
+    if (!idParent || !name) { res.sendStatus(500); return; }
     try {
         const newColumn = await addNewColumn({ idParent, name });
         res.json({id: newColumn.id});

@@ -3,6 +3,7 @@ import { Item, Task } from "@prisma/client";
 export type Task_ = {
     id: string,
     name: string,
+    columnId: string,
     list: string[],
     text: string | null
 };

@@ -5,9 +5,10 @@ import { cookieAttr, COOKIE_NAME } from "../constants";
 
 const router = express.Router();
 
-const cb = async (res: any, err: any, user: Partial<User>, info: any) => {
+const cb = async (req: any, res: any, err: any, user: Partial<User>, info: any) => {
     if (user) {
-        res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr);
+        // res.cookie(COOKIE_NAME, `${user.id}`, cookieAttr);
+        req.session.userId = user.id;
         res.redirect(`${process.env.CORS_ORIGIN}/`);
         return;
     }
@@ -33,7 +34,7 @@ router.get(process.env.GOOGLE_URI_REDIRECT as string, (req, res, next) => {
             // failureMessage: true, // don't work
         }, 
         (err, user, info) => {
-            (async () => await cb(res, err, user, info))();
+            (async () => await cb(req, res, err, user, info))();
         }        
     )(req, res, next)
 });
@@ -48,7 +49,7 @@ router.get(process.env.GITHUB_URI_REDIRECT as string, (req, res, next) => {
             session: false
         }, 
         (err: any, user: any, info: any) => {
-            (async () => await cb(res, err, user, info))();
+            (async () => await cb(req, res, err, user, info))();
         }        
     )(req, res, next)
 });

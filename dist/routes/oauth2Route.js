@@ -14,11 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
-const constants_1 = require("../constants");
 const router = express_1.default.Router();
-const cb = (res, err, user, info) => __awaiter(void 0, void 0, void 0, function* () {
+const cb = (req, res, err, user, info) => __awaiter(void 0, void 0, void 0, function* () {
     if (user) {
-        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, constants_1.cookieAttr);
+        req.session.userId = user.id;
         res.redirect(`${process.env.CORS_ORIGIN}/`);
         return;
     }
@@ -36,7 +35,7 @@ router.get(process.env.GOOGLE_URI_REDIRECT, (req, res, next) => {
     passport_1.default.authenticate('google', {
         session: false
     }, (err, user, info) => {
-        (() => __awaiter(void 0, void 0, void 0, function* () { return yield cb(res, err, user, info); }))();
+        (() => __awaiter(void 0, void 0, void 0, function* () { return yield cb(req, res, err, user, info); }))();
     })(req, res, next);
 });
 router.get('/oauth2/github/login', passport_1.default.authenticate('github', {
@@ -47,7 +46,7 @@ router.get(process.env.GITHUB_URI_REDIRECT, (req, res, next) => {
     passport_1.default.authenticate('github', {
         session: false
     }, (err, user, info) => {
-        (() => __awaiter(void 0, void 0, void 0, function* () { return yield cb(res, err, user, info); }))();
+        (() => __awaiter(void 0, void 0, void 0, function* () { return yield cb(req, res, err, user, info); }))();
     })(req, res, next);
 });
 exports.default = router;

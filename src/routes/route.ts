@@ -12,7 +12,8 @@ import { sortedArrayFromLinkedList } from '../utils/sortedArrayFromLinkedList';
 const router = express.Router();
 
 router.get('/user', async (req, res) => {
-    const userId = req.cookies[COOKIE_NAME];
+    // const userId = req.cookies[COOKIE_NAME];
+    const userId = req.session.userId;
     if (!userId) {
         res.status(401).send(); 
         return;
@@ -32,9 +33,9 @@ router.get('/user', async (req, res) => {
     }
 });
 
-router.get('/groups', async (req, res) => {
+router.post('/groups', async (req, res) => {
     let groups;
-    const userId = req.cookies[COOKIE_NAME];
+    const { userId } = req.body;
     if (!userId) {
         res.status(401).send(); 
         return;

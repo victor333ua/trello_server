@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cookieAttr = exports.COOKIE_NAME = exports.__prod__ = void 0;
+exports.secret_session = exports.cookieAttr = exports.COOKIE_NAME = exports.__prod__ = void 0;
 exports.__prod__ = process.env.NODE_ENV === 'production';
 exports.COOKIE_NAME = "Login";
 exports.cookieAttr = {
@@ -9,4 +9,5 @@ exports.cookieAttr = {
     secure: exports.__prod__,
     maxAge: 1000 * 60 * 60 * 24 * 365,
 };
+exports.secret_session = 'qwerty_vic3';
 //# sourceMappingURL=constants.js.map

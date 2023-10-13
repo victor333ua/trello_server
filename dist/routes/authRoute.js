@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const index_1 = require("../index");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const constants_1 = require("../constants");
+require("../types");
 const authRouter = express_1.default.Router();
 authRouter.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
@@ -29,8 +30,8 @@ authRouter.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, fun
         user = yield index_1.prisma.user.create({
             data: { email, password: cryptPassword }
         });
-        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, constants_1.cookieAttr)
-            .json({ user: { id: user.id, email: user.email } });
+        req.session.userId = user.id;
+        res.json({ user: { id: user.id, email: user.email } });
     }
     catch (err) {
         res.status(400).send(err.message);
@@ -49,15 +50,19 @@ authRouter.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, functi
         const isCompare = yield bcrypt_1.default.compare(password, user.password);
         if (!isCompare)
             throw new Error(JSON.stringify({ password: 'invalid password' }));
-        res.cookie(constants_1.COOKIE_NAME, `${user.id}`, constants_1.cookieAttr)
-            .json({ user: { id: user.id, email: user.email, name: user.name } });
+        req.session.userId = user.id;
+        res.json({ user: { id: user.id, email: user.email, name: user.name } });
     }
     catch (err) {
         res.status(400).send(err.message);
     }
 }));
 authRouter.get('/logout', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.clearCookie(constants_1.COOKIE_NAME);
+    req.session.destroy(err => {
+        res.clearCookie(constants_1.COOKIE_NAME).end();
+        if (err)
+            res.status(400).send(err.message);
+    });
 }));
 exports.default = authRouter;
 //# sourceMappingURL=authRoute.js.map

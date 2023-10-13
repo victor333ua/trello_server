@@ -8,4 +8,4 @@ export const cookieAttr: CookieOptions = {
     secure: __prod__,
     maxAge: 1000 * 60 * 60 * 24 * 365,
 };
-
+export const secret_session = 'qwerty_vic3'

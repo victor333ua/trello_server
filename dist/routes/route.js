@@ -13,7 +13,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const constants_1 = require("../constants");
 const index_1 = require("../index");
 const crudColumn_1 = require("../utils/crudColumn");
 const crudLinkedList_1 = require("../utils/crudLinkedList");
@@ -22,7 +21,7 @@ const itemsToArray_1 = require("../utils/itemsToArray");
 const sortedArrayFromLinkedList_1 = require("../utils/sortedArrayFromLinkedList");
 const router = express_1.default.Router();
 router.get('/user', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = req.cookies[constants_1.COOKIE_NAME];
+    const userId = req.session.userId;
     if (!userId) {
         res.status(401).send();
         return;
@@ -42,9 +41,9 @@ router.get('/user', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.status(400).send(err.message);
     }
 }));
-router.get('/groups', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/groups', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let groups;
-    const userId = req.cookies[constants_1.COOKIE_NAME];
+    const { userId } = req.body;
     if (!userId) {
         res.status(401).send();
         return;
